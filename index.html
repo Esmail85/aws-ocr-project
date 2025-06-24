@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple OCR App</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", system-ui, sans-serif;
+      }
+      body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        color: #e2e8f0;
+      }
+      .container {
+        background: rgba(15, 23, 42, 0.8);
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+        width: 100%;
+        max-width: 700px;
+        padding: 40px 30px;
+        text-align: center;
+        border: 1px solid rgba(71, 85, 105, 0.5);
+        backdrop-filter: blur(10px);
+      }
+      .app-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+        color: #60a5fa;
+        text-shadow: 0 0 15px rgba(96, 165, 250, 0.4);
+      }
+      h1 {
+        color: #93c5fd;
+        margin-bottom: 5px;
+        font-weight: 600;
+        font-size: 28px;
+      }
+      .subtitle {
+        color: #94a3b8;
+        font-size: 16px;
+        margin-bottom: 25px;
+      }
+      .file-input-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+      }
+      .file-input-label {
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        color: #0f172a;
+        padding: 14px 25px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        display: inline-block;
+        white-space: nowrap;
+        border: none;
+        height: 52px;
+        position: relative;
+        flex-shrink: 0;
+      }
+      .file-input-label:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.6);
+      }
+      #file-input {
+        display: none;
+      }
+      .file-name-container {
+        background: rgba(30, 41, 59, 0.7);
+        border: 2px solid rgba(71, 85, 105, 0.7);
+        border-radius: 10px;
+        height: 52px;
+        min-width: 250px;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+      }
+      .file-name-display {
+        font-size: 16px;
+        color: #e2e8f0;
+        padding: 0 20px;
+        white-space: nowrap;
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        scrollbar-width: thin;
+        scrollbar-color: #3b82f6 #1e293b;
+      }
+
+      .file-name-display::-webkit-scrollbar {
+        height: 6px;
+      }
+      .file-name-display::-webkit-scrollbar-track {
+        background: rgba(30, 41, 59, 0.5);
+        border-radius: 0 0 10px 10px;
+      }
+      .file-name-display::-webkit-scrollbar-thumb {
+        background: #3b82f6;
+        border-radius: 3px;
+      }
+      .file-name-display::-webkit-scrollbar-thumb:hover {
+        background: #60a5fa;
+      }
+      .file-name-display.empty {
+        color: #64748b;
+        font-style: italic;
+        justify-content: center;
+      }
+      .upload-btn {
+        background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+        color: #0f172a;
+        border: none;
+        padding: 18px 40px;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+      }
+      .upload-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.6);
+      }
+      .upload-btn:disabled {
+        background: #475569;
+        color: #94a3b8;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      .preview-container {
+        margin: 25px 0 10px;
+        display: none;
+        text-align: center;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid rgba(71, 85, 105, 0.5);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        border-left: 4px solid #60a5fa;
+      }
+      .preview-container img {
+        width: 100%;
+        max-height: 300px;
+        object-fit: contain;
+        display: block;
+      }
+      .ocr-output {
+        background: rgba(30, 41, 59, 0.7);
+        border-left: 4px solid #34d399;
+        margin-top: 15px;
+        padding: 15px 20px;
+        border-radius: 10px;
+        color: #d1fae5;
+        text-align: left;
+        font-family: monospace;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+        word-break: keep-all;
+        overflow: auto;
+        max-height: 300px;
+      }
+
+      /* New Error Modal Styles */
+      .error-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        backdrop-filter: blur(4px);
+      }
+      .error-modal.show {
+        visibility: visible;
+        opacity: 1;
+      }
+      .modal-content {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border-radius: 16px;
+        padding: 30px;
+        width: 90%;
+        max-width: 450px;
+        text-align: center;
+        position: relative;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(71, 85, 105, 0.5);
+        transform: translateY(20px);
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .error-modal.show .modal-content {
+        transform: translateY(0);
+      }
+      .modal-icon {
+        position: absolute;
+        top: -22px;
+        left: -22px;
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-size: 20px;
+        box-shadow: 0 5px 15px rgba(220, 38, 38, 0.5);
+      }
+      .modal-title {
+        color: #f87171;
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 15px;
+      }
+      .modal-message {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 12px 15px;
+        width: 100%;
+        margin-bottom: 25px;
+        text-align: left;
+        padding: 0 20px;
+      }
+      .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: rgba(239, 68, 68, 0.2);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .message-value {
+        color: #e2e8f0;
+        font-weight: 500;
+        text-align: left;
+        font-size: 15px;
+      }
+      .message-label {
+        color: #94a3b8;
+        text-align: right;
+        white-space: nowrap;
+        font-size: 15px;
+      }
+      .message-separator {
+        width: 6px;
+        height: 6px;
+        background: #f87171;
+        border-radius: 50%;
+        margin: 0 12px;
+        position: relative;
+        box-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+      }
+      .message-separator::before {
+        content: ":";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        color: #f87171;
+        font-size: 12px;
+        text-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+      }
+      .message-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+      }
+      .progress-fill {
+        height: 100%;
+        width: 100%;
+        background: linear-gradient(90deg, #ef4444, #dc2626);
+        transform: translateX(-100%);
+        transition: transform 3s linear;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="app-icon"><i class="fas fa-file-image"></i></div>
+      <h1>Simple OCR App</h1>
+      <div class="subtitle">Upload images for text extraction</div>
+
+      <div class="file-input-wrapper">
+        <label for="file-input" class="file-input-label"
+          ><i class="fas fa-folder-open"></i> <span>Choose image</span></label
+        >
+        <div class="file-name-container">
+          <div class="file-name-display empty" id="file-name-display">
+            No file selected
+          </div>
+        </div>
+      </div>
+
+      <input
+        type="file"
+        id="file-input"
+        accept="image/png,image/jpeg,image/jpg,image/tiff"
+      />
+
+      <div class="preview-container" id="preview-container">
+        <img id="image-preview" src="" alt="Image Preview" />
+      </div>
+
+      <button class="upload-btn" id="upload-btn" disabled>
+        <i class="fas fa-magic"></i> Generate Text
+      </button>
+
+      <div class="ocr-output" id="output" style="display: none"></div>
+    </div>
+
+    <!-- New Error Modal -->
+    <div class="error-modal" id="error-modal">
+      <div class="modal-content">
+        <div class="modal-icon">
+          <i class="fas fa-exclamation"></i>
+        </div>
+        <h2 class="modal-title">Invalid File</h2>
+        <div class="modal-message">
+          <span class="message-label">Supported files</span>
+          <span class="message-value">PNG - JPEG ( JPG ) - TIFF</span>
+          <span class="message-label">Maximum size</span>
+          <span class="message-value">7.5 MB</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const fileInput = document.getElementById("file-input");
+      const fileNameDisplay = document.getElementById("file-name-display");
+      const uploadBtn = document.getElementById("upload-btn");
+      const imagePreview = document.getElementById("image-preview");
+      const previewContainer = document.getElementById("preview-container");
+      const output = document.getElementById("output");
+      const errorModal = document.getElementById("error-modal");
+      const progressFill = document.getElementById("progress-fill");
+
+      const apiUrl =
+        "https://s4d6pctg92.execute-api.us-east-1.amazonaws.com/prod/upload";
+
+      // Function to show error modal
+      function showErrorModal() {
+        errorModal.classList.add("show");
+        progressFill.style.transform = "translateX(0)";
+
+        setTimeout(() => {
+          errorModal.classList.remove("show");
+          progressFill.style.transform = "translateX(-100%)";
+        }, 3000);
+      }
+
+      // Clears everything when user clicks "Choose image"
+      fileInput.addEventListener("click", function () {
+        fileInput.value = "";
+        fileNameDisplay.textContent = "No file selected";
+        fileNameDisplay.classList.add("empty");
+        imagePreview.src = "";
+        previewContainer.style.display = "none";
+        output.textContent = "";
+        output.style.display = "none";
+        uploadBtn.disabled = true;
+      });
+
+      fileInput.addEventListener("change", function () {
+        if (this.files && this.files[0]) {
+          const file = this.files[0];
+
+          const allowedTypes = [
+            "image/png",
+            "image/jpeg",
+            "image/jpg",
+            "image/tiff",
+          ];
+
+          const maxSizeBytes = 7.5 * 1024 * 1024;
+          const isValid =
+            allowedTypes.includes(file.type) && file.size <= maxSizeBytes;
+
+          if (!isValid) {
+            showErrorModal();
+            fileInput.value = "";
+            fileNameDisplay.textContent = "No file selected";
+            fileNameDisplay.classList.add("empty");
+            previewContainer.style.display = "none";
+            uploadBtn.disabled = true;
+            return;
+          }
+
+          fileNameDisplay.textContent = file.name;
+          fileNameDisplay.classList.remove("empty");
+          uploadBtn.disabled = false;
+
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            imagePreview.src = e.target.result;
+            previewContainer.style.display = "block";
+          };
+          reader.readAsDataURL(file);
+        } else {
+          fileNameDisplay.textContent = "No file selected";
+          fileNameDisplay.classList.add("empty");
+          previewContainer.style.display = "none";
+          uploadBtn.disabled = true;
+        }
+      });
+
+      uploadBtn.addEventListener("click", function () {
+        if (!fileInput.files[0]) return;
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML =
+          "<i class='fas fa-spinner fa-spin'></i> Processing...";
+
+        reader.onload = async function () {
+          const base64Image = reader.result.split(",")[1];
+
+          try {
+            const response = await fetch(apiUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                imageBase64: base64Image,
+                imageName: file.name,
+              }),
+            });
+
+            const data = await response.json();
+            output.style.display = "block";
+            if (response.ok) {
+              output.textContent = data.text || "No text found.";
+            } else {
+              output.textContent =
+                "Error: " + (data.error || "Something went wrong.");
+            }
+          } catch (err) {
+            output.style.display = "block";
+            output.textContent = "Fetch error: " + err.message;
+          }
+
+          uploadBtn.disabled = true;
+          uploadBtn.innerHTML = "<i class='fas fa-magic'></i> Generate Text";
+        };
+
+        reader.readAsDataURL(file);
+      });
+    </script>
+  </body>
+</html>
